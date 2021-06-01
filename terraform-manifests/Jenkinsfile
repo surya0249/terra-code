@@ -48,9 +48,9 @@ pipeline {
            }
        }
 
-        stage('destroy') {
+        stage('apply') {
             steps {
-                sh "pwd;cd terraform/terraform-manifests ; terraform destroy -input=false tfplan"
+                sh "pwd;cd terraform/terraform-manifests ; terraform apply -input=false tfplan"
             }
         }
     }
