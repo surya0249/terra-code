@@ -2,57 +2,71 @@ pipeline {
 
     parameters {
         string(name: 'environment', defaultValue: 'terraform', description: 'Workspace/environment file to use for deployment')
+        string(name: 'region', defaultValue: 'us-east-2', description: 'select region to deployment')
+        string(name: 'env', defaultValue: 'prod', description: 'select environment to deployment')
+        string(name: 'service', defaultValue: 'apache', description: 'please provide service name')
         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
 
     }
 
 
-     
+   
 
    agent  any
-       
+        
     stages {
         stage('checkout') {
             steps {
-                 script{
-                        dir("terraform")
-                        {
-                            git "https://github.com/surya0249/terra-code.git"
-                        }
-                    }
-                }
+                  git "https://github.com/easyawslearn/Terraform-Tutorial.git"
+                  }
             }
 
         stage('Plan') {
             steps {
-                sh 'pwd;cd terraform/terraform-manifests ; terraform init -input=false'
-                sh 'pwd;cd terraform/terraform-manifests ; terraform workspace new ${environment}'
-                sh 'pwd;cd terraform/terraform-manifests ; terraform workspace select ${environment}'
-                sh "pwd;cd terraform/terraform-manifests ;terraform plan -input=false -out tfplan "
-                sh 'pwd;cd terraform/terraform-manifests ;terraform show -no-color tfplan > tfplan.txt'
+                sh '''
+                  cd terraform-manifests;
+                  terraform init \
+                      -upgrade=true \
+                      -get=true \
+                      -input=true \
+                      -force-copy \
+                      -backend=true \
+                      -backend-config "bucket=terracode-2021/dev" \
+                      -backend-config "key=terraform-${region}/${service}.tfstate" \
+                      -backend-config "region=${region}" \
+                      -backend-config "dynamodb_table=terraform" \
+                      -lock=true
+                '''
+                sh """#!/bin/bash
+                  cd terraform-manifests ; terraform workspace show | grep ${environment} ; if [ "\$?" == 0 ];then echo "workspace already exists ";else terraform workspace new ${environment}; fi;
+                echo "INFO: Terraform -> Working for ${environment}";
+                terraform plan -var region=${region} -out tfplan -lock=true;
+                terraform show -no-color tfplan > tfplan.txt;
+                """
             }
         }
         stage('Approval') {
-           when {
-               not {
-                   equals expected: true, actual: params.autoApprove
-               }
-           }
+          when {
+              not {
+                  equals expected: true, actual: params.autoApprove
+              }
+          }
 
-           steps {
-               script {
-                    def plan = readFile 'terraform/terra-code/tfplan.txt'
+          steps {
+              script {
+                    def plan = readFile 'terraform-manifests/tfplan.txt'
                     input message: "Do you want to apply the plan?",
                     parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
-               }
-           }
-       }
+              }
+          }
+      }
 
-        stage('apply') {
+        stage('Apply') {
             steps {
-                sh "pwd;cd terraform/terraform-manifests ; terraform apply -input=false tfplan"
+                sh "cd terraform-manifests ; terraform apply -input=false tfplan "
             }
         }
+      
     }
 
   }
