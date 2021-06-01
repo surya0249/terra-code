@@ -25,11 +25,11 @@ pipeline {
 
         stage('Plan') {
             steps {
-                sh 'pwd;cd terraform/terra-code ; terraform init -input=false'
-                sh 'pwd;cd terraform/terra-code ; terraform workspace new ${environment}'
-                sh 'pwd;cd terraform/terra-code ; terraform workspace select ${environment}'
-                sh "pwd;cd terraform/terra-code ;terraform plan -input=false -out tfplan "
-                sh 'pwd;cd terraform/terra-code ;terraform show -no-color tfplan > tfplan.txt'
+                sh 'pwd;cd terraform/terraform-manifests ; terraform init -input=false'
+                sh 'pwd;cd terraform/terraform-manifests ; terraform workspace new ${environment}'
+                sh 'pwd;cd terraform/terraform-manifests ; terraform workspace select ${environment}'
+                sh "pwd;cd terraform/terraform-manifests ;terraform plan -input=false -out tfplan "
+                sh 'pwd;cd terraform/terraform-manifests ;terraform show -no-color tfplan > tfplan.txt'
             }
         }
         stage('Approval') {
@@ -50,7 +50,7 @@ pipeline {
 
         stage('Apply') {
             steps {
-                sh "pwd;cd terraform/terra-code ; terraform apply -input=false tfplan"
+                sh "pwd;cd terraform/terraform-manifests ; terraform apply -input=false tfplan"
             }
         }
     }
