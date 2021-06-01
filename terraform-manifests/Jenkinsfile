@@ -35,7 +35,7 @@ pipeline {
                       -backend-config "key=terraform-${region}/${service}.tfstate" \
                       -backend-config "region=${region}" \
                       -backend-config "dynamodb_table=terraform" \
-                      -lock=readonly
+                      -lockfile=readonly
                 '''
                 sh """#!/bin/bash
                   cd terraform-manifests ; terraform workspace show | grep ${environment} ; if [ "\$?" == 0 ];then echo "workspace already exists ";else terraform workspace new ${environment}; fi;
