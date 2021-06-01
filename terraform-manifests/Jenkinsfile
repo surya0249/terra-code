@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('checkout') {
             steps {
-                  git "https://github.com/easyawslearn/Terraform-Tutorial.git"
+                  git "https://github.com/surya0249/terra-code.git"
                   }
             }
 
